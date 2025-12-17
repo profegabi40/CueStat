@@ -454,6 +454,167 @@ textarea:focus-visible {
     setTimeout(fixFormLabels, 1000);
     setTimeout(fixFormLabels, 2000);
 })();
+
+// Ensure all links have discernible text
+(function() {
+    const fixLinkText = function() {
+        // Find all links (a elements and elements with role="link")
+        const links = document.querySelectorAll('a, [role="link"]');
+        
+        links.forEach(function(link) {
+            // Check if link has discernible text
+            const hasText = link.textContent && link.textContent.trim().length > 0;
+            const hasAriaLabel = link.getAttribute('aria-label') && link.getAttribute('aria-label').trim().length > 0;
+            const hasAriaLabelledby = link.getAttribute('aria-labelledby');
+            const hasTitle = link.getAttribute('title') && link.getAttribute('title').trim().length > 0;
+            
+            // If no discernible text, add aria-label
+            if (!hasText && !hasAriaLabel && !hasAriaLabelledby && !hasTitle) {
+                // Try to determine purpose from context
+                let labelText = '';
+                
+                // Check for images inside the link
+                const img = link.querySelector('img');
+                if (img) {
+                    labelText = img.getAttribute('alt') || img.getAttribute('title') || '';
+                }
+                
+                // Check for SVG icons
+                if (!labelText) {
+                    const svg = link.querySelector('svg');
+                    if (svg) {
+                        const svgTitle = svg.querySelector('title');
+                        if (svgTitle) {
+                            labelText = svgTitle.textContent;
+                        } else {
+                            // Try to infer from SVG class or nearby text
+                            const svgClass = svg.getAttribute('class') || '';
+                            if (svgClass.includes('github')) labelText = 'GitHub';
+                            else if (svgClass.includes('twitter')) labelText = 'Twitter';
+                            else if (svgClass.includes('linkedin')) labelText = 'LinkedIn';
+                            else if (svgClass.includes('home')) labelText = 'Home';
+                            else if (svgClass.includes('menu')) labelText = 'Menu';
+                            else labelText = 'Link';
+                        }
+                    }
+                }
+                
+                // Check for data attributes or class names
+                if (!labelText) {
+                    const dataTestId = link.getAttribute('data-testid');
+                    if (dataTestId) {
+                        labelText = dataTestId.replace(/([A-Z])/g, ' $1').trim();
+                    }
+                }
+                
+                // Check for container class (like _container_gzau3_1)
+                if (!labelText) {
+                    const className = link.className;
+                    if (className && className.includes('container')) {
+                        // Check if there's a parent with text
+                        const parent = link.closest('[data-testid], [class*="st-"]');
+                        if (parent) {
+                            const parentText = parent.textContent.trim();
+                            if (parentText && parentText.length < 100) {
+                                labelText = parentText;
+                            }
+                        }
+                    }
+                }
+                
+                // Check href for clues
+                if (!labelText) {
+                    const href = link.getAttribute('href');
+                    if (href) {
+                        if (href.includes('github')) labelText = 'GitHub link';
+                        else if (href.includes('twitter')) labelText = 'Twitter link';
+                        else if (href.includes('linkedin')) labelText = 'LinkedIn link';
+                        else if (href.includes('mailto:')) labelText = 'Email link';
+                        else if (href.includes('tel:')) labelText = 'Phone link';
+                        else if (href.startsWith('#')) labelText = 'Jump to section';
+                        else if (href === '/' || href === '') labelText = 'Home';
+                        else {
+                            // Extract domain or path
+                            try {
+                                const url = new URL(href, window.location.origin);
+                                labelText = 'Link to ' + (url.hostname || 'page');
+                            } catch (e) {
+                                labelText = 'Link';
+                            }
+                        }
+                    }
+                }
+                
+                // Fallback
+                if (!labelText) {
+                    labelText = 'Link';
+                }
+                
+                // Set aria-label
+                link.setAttribute('aria-label', labelText);
+                
+                // Also add title for mouse users
+                if (!link.getAttribute('title')) {
+                    link.setAttribute('title', labelText);
+                }
+            }
+            
+            // Ensure role="link" is set for non-anchor elements acting as links
+            if (link.tagName.toLowerCase() !== 'a' && !link.getAttribute('role')) {
+                link.setAttribute('role', 'link');
+            }
+            
+            // Ensure links are keyboard accessible
+            if (link.tagName.toLowerCase() !== 'a' && !link.hasAttribute('tabindex')) {
+                link.setAttribute('tabindex', '0');
+            }
+        });
+        
+        // Specifically fix container links that might be empty
+        const containerLinks = document.querySelectorAll('[class*="container"]');
+        containerLinks.forEach(function(container) {
+            if (container.tagName.toLowerCase() === 'a' || container.getAttribute('role') === 'link') {
+                const hasText = container.textContent && container.textContent.trim().length > 0;
+                const hasAriaLabel = container.getAttribute('aria-label');
+                
+                if (!hasText && !hasAriaLabel) {
+                    // Try to find context
+                    const parentSection = container.closest('section, div[data-testid], article');
+                    let contextText = 'Link';
+                    
+                    if (parentSection) {
+                        const heading = parentSection.querySelector('h1, h2, h3, h4, h5, h6');
+                        if (heading) {
+                            contextText = heading.textContent.trim() + ' link';
+                        }
+                    }
+                    
+                    container.setAttribute('aria-label', contextText);
+                    container.setAttribute('title', contextText);
+                }
+            }
+        });
+    };
+    
+    // Run immediately
+    fixLinkText();
+    
+    // Run on load
+    if (window.addEventListener) {
+        window.addEventListener('load', fixLinkText);
+    }
+    
+    // Monitor for dynamically added links
+    if (typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(fixLinkText);
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+    
+    // Run on Streamlit reruns
+    setTimeout(fixLinkText, 500);
+    setTimeout(fixLinkText, 1000);
+    setTimeout(fixLinkText, 2000);
+})();
 </script>
 """, unsafe_allow_html=True)
 
