@@ -1087,46 +1087,64 @@ if selected_tab == "Data Input":
     elif input_method == "Google Sheets":
         st.subheader("Import from Google Sheets")
         st.markdown("""
-        **Instructions:**
-        1. Open your Google Sheet
-        2. Click **File → Share → Publish to web**
-        3. Choose **Entire Document** or specific sheet
-        4. Select **Comma-separated values (.csv)** format
-        5. Click **Publish** and copy the link
-        6. Paste the link below
-        """)
+        <div role="region" aria-label="Google Sheets Import Instructions">
+        <strong>Instructions for Publishing Your Google Sheet:</strong>
+        <ol>
+        <li>Open your Google Sheet in a web browser</li>
+        <li>Click <strong>File</strong> menu, then <strong>Share</strong>, then <strong>Publish to web</strong></li>
+        <li>In the dialog, choose <strong>Entire Document</strong> (or select a specific sheet)</li>
+        <li>For the format dropdown, select <strong>Comma-separated values (.csv)</strong></li>
+        <li>Click the <strong>Publish</strong> button and confirm</li>
+        <li>Copy the generated link (it will look like: https://docs.google.com/spreadsheets/d/e/...)</li>
+        <li>Paste the link in the field below</li>
+        </ol>
+        <p><strong>Note:</strong> The sheet must be published as CSV format, not as a web page.</p>
+        </div>
+        """, unsafe_allow_html=True)
         
         sheets_url = st.text_input(
-            "Google Sheets URL (Published as CSV)",
-            placeholder="https://docs.google.com/spreadsheets/d/e/...",
-            help="Make sure your sheet is published to the web as CSV"
+            "Google Sheets URL * (Required)",
+            placeholder="Example: https://docs.google.com/spreadsheets/d/e/2PACX-1vS...",
+            help="Paste the CSV link you copied from 'Publish to web'. Must end with /pub?output=csv or similar.",
+            key="google_sheets_url_input"
         )
         
-        if st.button("Load from Google Sheets", key="load_sheets_btn"):
+        if st.button("Load from Google Sheets", key="load_sheets_btn", help="Click to import data from the URL above"):
             if sheets_url:
-                try:
-                    # Read CSV directly from the published URL
-                    df = pd.read_csv(sheets_url)
-                    
-                    if df is not None and not df.empty:
-                        # Reset index to start at 1 instead of 0
-                        df.index = range(1, len(df) + 1)
-                        df.index.name = None
-                        # Replace any existing dataframe with the new one
-                        st.session_state.global_dataframes = {'active_data': df}
-                        st.success(f"Successfully loaded data from Google Sheets! ({len(df)} rows, {len(df.columns)} columns)")
-                        st.write("Loaded data:")
-                        show_table(df)
+                with st.spinner("Loading data from Google Sheets..."):
+                    try:
+                        # Read CSV directly from the published URL
+                        df = pd.read_csv(sheets_url)
                         
-                        # Reset manual entry if Google Sheets is loaded
-                        st.session_state.manual_entry_df = pd.DataFrame({'Column A': ['']})
-                    else:
-                        st.error("The Google Sheet appears to be empty.")
-                except Exception as e:
-                    st.error(f"Error loading Google Sheets: {e}")
-                    st.info("💡 Make sure you've published the sheet to the web as CSV, not as a web page.")
+                        if df is not None and not df.empty:
+                            # Reset index to start at 1 instead of 0
+                            df.index = range(1, len(df) + 1)
+                            df.index.name = None
+                            # Replace any existing dataframe with the new one
+                            st.session_state.global_dataframes = {'active_data': df}
+                            st.success(f"✅ Successfully loaded data from Google Sheets! Loaded {len(df)} rows and {len(df.columns)} columns.")
+                            st.write("**Preview of Loaded Data:**")
+                            show_table(df)
+                            
+                            # Reset manual entry if Google Sheets is loaded
+                            st.session_state.manual_entry_df = pd.DataFrame({'Column A': ['']})
+                        else:
+                            st.error("❌ Error: The Google Sheet appears to be empty. Please check that your sheet contains data and try again.")
+                    except pd.errors.ParserError as pe:
+                        st.error(f"❌ Error: Unable to parse the data from Google Sheets. {pe}")
+                        st.info("💡 **How to fix:** Make sure you published the sheet as 'Comma-separated values (.csv)' format, not as a web page or other format.")
+                    except Exception as e:
+                        st.error(f"❌ Error loading Google Sheets: {e}")
+                        st.info("""
+                        💡 **Troubleshooting steps:**
+                        - Verify the sheet is published to the web (File → Share → Publish to web)
+                        - Ensure you selected 'Comma-separated values (.csv)' as the format
+                        - Check that the URL starts with https://docs.google.com/spreadsheets/
+                        - Make sure the sheet is not restricted or private
+                        - Try copying the publish link again
+                        """)
             else:
-                st.warning("Please enter a Google Sheets URL.")
+                st.warning("⚠️ Required field: Please enter a Google Sheets URL in the field above before clicking Load.")
         uploaded_file = None  # Set to None so file upload logic doesn't run
     else:  # Manual Entry
         uploaded_file = None  # Set to None so file upload logic doesn't run
