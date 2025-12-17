@@ -101,7 +101,61 @@ textarea:focus-visible {
 .skip-link:focus {
   top: 0;
 }
+/* Fix ARIA attributes on Streamlit-generated iframes */
+/* Remove invalid ARIA attributes from iframes in sidebar and main menu */
+.stSidebar iframe,
+#MainMenu iframe {
+  /* Ensure iframes have proper title for accessibility */
+}
+/* Add title attribute via CSS pseudo-elements won't work, so we ensure via JS */
+/* Hide iframes that don't need to be exposed to screen readers */
+.stSidebar iframe[src*="about:blank"],
+#MainMenu iframe[src*="about:blank"] {
+  display: none !important;
+}
 </style>
+<script>
+// Fix ARIA attributes on Streamlit iframes
+(function() {
+    // Wait for DOM to be ready
+    const fixIframeAria = function() {
+        // Find all iframes in sidebar and main menu
+        const iframes = document.querySelectorAll('.stSidebar iframe, #MainMenu iframe');
+        iframes.forEach(function(iframe) {
+            // Remove invalid ARIA attributes from iframes
+            iframe.removeAttribute('aria-hidden');
+            iframe.removeAttribute('aria-label');
+            iframe.removeAttribute('aria-labelledby');
+            iframe.removeAttribute('aria-describedby');
+            
+            // Add proper title if missing
+            if (!iframe.getAttribute('title')) {
+                iframe.setAttribute('title', 'Streamlit component frame');
+            }
+            
+            // If iframe is empty or about:blank, hide from accessibility tree
+            if (iframe.src === '' || iframe.src.includes('about:blank')) {
+                iframe.setAttribute('aria-hidden', 'true');
+                iframe.setAttribute('tabindex', '-1');
+            }
+        });
+    };
+    
+    // Run immediately
+    fixIframeAria();
+    
+    // Also run on Streamlit reruns
+    if (window.addEventListener) {
+        window.addEventListener('load', fixIframeAria);
+    }
+    
+    // Use MutationObserver to catch dynamically added iframes
+    if (typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(fixIframeAria);
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+})();
+</script>
 """, unsafe_allow_html=True)
 
 
