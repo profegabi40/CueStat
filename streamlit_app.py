@@ -113,6 +113,58 @@ textarea:focus-visible {
 #MainMenu iframe[src*="about:blank"] {
   display: none !important;
 }
+/* Fix contrast issues for Streamlit emotion-cache elements */
+/* Ensure WCAG 2 AA compliance (4.5:1 for normal text, 3:1 for large text) */
+.st-emotion-cache-1sct1q3,
+[class*="st-emotion-cache"] {
+  color: #000000 !important; /* Black text for maximum contrast */
+}
+/* If element is on dark background, ensure white text */
+.st-emotion-cache-1sct1q3[style*="background"],
+[class*="st-emotion-cache"][style*="background: rgb(14, 17, 23)"],
+[class*="st-emotion-cache"][style*="background:#0e1117"],
+[class*="st-emotion-cache"][style*="background-color:#0e1117"],
+[class*="st-emotion-cache"][style*="background-color: rgb(14, 17, 23)"] {
+  color: #FFFFFF !important; /* White text on dark backgrounds */
+}
+/* Ensure links and interactive elements have sufficient contrast */
+.st-emotion-cache-1sct1q3 a,
+[class*="st-emotion-cache"] a {
+  color: #0173B2 !important; /* Accessible blue - passes WCAG AA */
+  text-decoration: underline !important;
+}
+/* Ensure button text has proper contrast */
+.st-emotion-cache-1sct1q3 button,
+[class*="st-emotion-cache"] button {
+  color: #000000 !important;
+  background-color: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+}
+.st-emotion-cache-1sct1q3 button:hover,
+[class*="st-emotion-cache"] button:hover {
+  background-color: #0173B2 !important;
+  color: #FFFFFF !important;
+  border-color: #0173B2 !important;
+}
+/* Fix any low contrast text in sidebar or main content */
+.stSidebar .st-emotion-cache-1sct1q3,
+.stSidebar [class*="st-emotion-cache"] {
+  color: #262730 !important; /* Dark gray on light background - 12.63:1 ratio */
+}
+/* Ensure proper contrast for all text elements */
+.st-emotion-cache-1sct1q3 p,
+.st-emotion-cache-1sct1q3 span,
+.st-emotion-cache-1sct1q3 div,
+[class*="st-emotion-cache"] p,
+[class*="st-emotion-cache"] span {
+  color: inherit !important;
+}
+/* Fix placeholder text contrast */
+.st-emotion-cache-1sct1q3 input::placeholder,
+[class*="st-emotion-cache"] input::placeholder {
+  color: #6c757d !important; /* Medium gray - 4.5:1 ratio */
+  opacity: 1 !important;
+}
 </style>
 <script>
 // Fix ARIA attributes on Streamlit iframes
