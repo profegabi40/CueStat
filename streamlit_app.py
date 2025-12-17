@@ -976,6 +976,147 @@ textarea:focus-visible {
     setTimeout(ensureLandmarks, 1000);
     setTimeout(ensureLandmarks, 2000);
 })();
+
+// Ensure proper heading structure for screen readers
+(function() {
+    const ensureHeadingStructure = function() {
+        // Convert Streamlit's title to h1
+        const titleElements = document.querySelectorAll('[data-testid="stTitle"], .stTitle');
+        titleElements.forEach(function(element) {
+            if (element.tagName.toLowerCase() !== 'h1') {
+                const h1 = document.createElement('h1');
+                h1.textContent = element.textContent;
+                h1.className = element.className;
+                h1.style.cssText = element.style.cssText;
+                element.parentNode.replaceChild(h1, element);
+            }
+        });
+        
+        // Convert Streamlit's st.header() to h2
+        const headerElements = document.querySelectorAll('[data-testid="stHeader"]:not(header), .stHeader:not(header)');
+        headerElements.forEach(function(element) {
+            if (element.tagName.toLowerCase() !== 'h2' && element.tagName.toLowerCase() !== 'header') {
+                const h2 = document.createElement('h2');
+                h2.textContent = element.textContent;
+                h2.className = element.className;
+                h2.style.cssText = element.style.cssText;
+                element.parentNode.replaceChild(h2, element);
+            }
+        });
+        
+        // Convert Streamlit's st.subheader() to h3
+        const subheaderElements = document.querySelectorAll('[data-testid="stSubheader"], .stSubheader');
+        subheaderElements.forEach(function(element) {
+            if (element.tagName.toLowerCase() !== 'h3') {
+                const h3 = document.createElement('h3');
+                h3.textContent = element.textContent;
+                h3.className = element.className;
+                h3.style.cssText = element.style.cssText;
+                element.parentNode.replaceChild(h3, element);
+            }
+        });
+        
+        // Find markdown headers and ensure they're using proper heading tags
+        const markdownElements = document.querySelectorAll('.stMarkdown, [data-testid="stMarkdown"]');
+        markdownElements.forEach(function(container) {
+            // Check for h1-h6 elements
+            const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            headings.forEach(function(heading) {
+                // Ensure heading has proper role
+                if (!heading.getAttribute('role')) {
+                    heading.setAttribute('role', 'heading');
+                    const level = parseInt(heading.tagName.substring(1));
+                    heading.setAttribute('aria-level', level.toString());
+                }
+            });
+        });
+        
+        // Ensure main title exists (CueStats app title)
+        let mainH1 = document.querySelector('h1');
+        if (!mainH1) {
+            // Check for the app title in various possible locations
+            const appTitle = document.querySelector('[data-testid="stAppViewContainer"] h1, .main h1, .stTitle');
+            if (!appTitle) {
+                // Create h1 from title if it exists as text
+                const possibleTitle = document.querySelector('div[data-testid*="Title"], .element-container:first-child');
+                if (possibleTitle && possibleTitle.textContent.includes('CueStats')) {
+                    mainH1 = document.createElement('h1');
+                    mainH1.textContent = possibleTitle.textContent.trim();
+                    mainH1.style.fontSize = '2.5rem';
+                    mainH1.style.fontWeight = '700';
+                    mainH1.style.marginBottom = '1rem';
+                    
+                    // Insert at the beginning of main content
+                    const mainContent = document.querySelector('main, [role="main"], .stMainBlockContainer, .main');
+                    if (mainContent) {
+                        mainContent.insertBefore(mainH1, mainContent.firstChild);
+                    }
+                }
+            }
+        }
+        
+        // Ensure all section headings are properly tagged
+        const sectionLabels = document.querySelectorAll('[aria-label*="Tab"], [aria-label*="Section"]');
+        sectionLabels.forEach(function(section) {
+            const label = section.getAttribute('aria-label');
+            if (label && !section.querySelector('h2, h3')) {
+                // Create heading for this section
+                const heading = document.createElement('h2');
+                heading.textContent = label;
+                heading.className = 'visually-hidden'; // Hide visually but keep for screen readers
+                heading.style.position = 'absolute';
+                heading.style.left = '-10000px';
+                heading.style.width = '1px';
+                heading.style.height = '1px';
+                heading.style.overflow = 'hidden';
+                section.insertBefore(heading, section.firstChild);
+            }
+        });
+        
+        // Add heading hierarchy validation and fix if needed
+        const allHeadings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        let lastLevel = 0;
+        allHeadings.forEach(function(heading) {
+            const level = parseInt(heading.tagName.substring(1));
+            
+            // Ensure proper ARIA attributes
+            heading.setAttribute('role', 'heading');
+            heading.setAttribute('aria-level', level.toString());
+            
+            // Check for proper hierarchy (optional - just ensure ARIA is correct)
+            if (level - lastLevel > 1) {
+                // Skipped heading level - aria-level still reflects actual level
+                // This is informational; the heading is still accessible
+            }
+            lastLevel = level;
+        });
+    };
+    
+    // Run immediately
+    ensureHeadingStructure();
+    
+    // Run after DOM is fully loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureHeadingStructure);
+    }
+    
+    // Run on load
+    if (window.addEventListener) {
+        window.addEventListener('load', ensureHeadingStructure);
+    }
+    
+    // Monitor for dynamically added content
+    if (typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(ensureHeadingStructure);
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+    
+    // Run multiple times for Streamlit reruns
+    setTimeout(ensureHeadingStructure, 100);
+    setTimeout(ensureHeadingStructure, 500);
+    setTimeout(ensureHeadingStructure, 1000);
+    setTimeout(ensureHeadingStructure, 2000);
+})();
 </script>
 """, unsafe_allow_html=True)
 
