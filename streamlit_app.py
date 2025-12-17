@@ -13,15 +13,15 @@ try:
 except Exception:
     ST_AGRID_AVAILABLE = False
 # --- Streamlit App Configuration ---
-st.set_page_config(layout="wide", page_title="CueStats")
-st.title("CueStats: STAT C1000 Analysis Tool")
+st.set_page_config(layout="wide", page_title="CueStat")
+st.title("CueStat: STAT C1000 Analysis Tool")
 
 # Inject noscript warning
 st.markdown("""
 <noscript>
 <div style="padding: 2rem; text-align: center; background-color: #fff3cd; border: 2px solid #ffc107; margin: 1rem;">
 <h1>JavaScript Required</h1>
-<p><strong>CueStats requires JavaScript to function.</strong></p>
+<p><strong>CueStat requires JavaScript to function.</strong></p>
 <p>Please enable JavaScript in your browser settings to use this application.</p>
 <p>For accessibility assistance without JavaScript, please contact support.</p>
 </div>

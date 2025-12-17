@@ -1,6 +1,6 @@
-# 📊 CueStats - Interactive Statistical Analysis Tool
+# 📊 CueStat - Interactive Statistical Analysis Tool
 
-**CueStats** is a comprehensive, accessible statistical analysis application designed for educational use. Built with Streamlit, it provides an intuitive interface for performing statistical calculations, creating visualizations, and exploring statistical concepts through interactive simulations.
+**CueStat** is a comprehensive, accessible statistical analysis application designed for educational use. Built with Streamlit, it provides an intuitive interface for performing statistical calculations, creating visualizations, and exploring statistical concepts through interactive simulations.
 
 [![WCAG 2.1 Level AA Compliant](https://img.shields.io/badge/WCAG%202.1-Level%20AA-green.svg)](ADA_COMPLIANCE_REVIEW_FINAL.md)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
@@ -8,7 +8,7 @@
 
 ## 🎯 Purpose
 
-CueStats serves as an **educational statistics platform** that enables students and instructors to:
+CueStat serves as an **educational statistics platform** that enables students and instructors to:
 - Perform comprehensive statistical analyses without programming knowledge
 - Visualize probability distributions and statistical concepts
 - Explore statistical principles through interactive simulations
@@ -54,7 +54,7 @@ Interactive calculators for:
 
 ## ♿ Accessibility
 
-CueStats is **WCAG 2.1 Level AA compliant** with:
+CueStat is **WCAG 2.1 Level AA compliant** with:
 - ✅ Full keyboard navigation support
 - ✅ Screen reader compatibility (NVDA, JAWS, VoiceOver)
 - ✅ High contrast mode support
@@ -134,7 +134,7 @@ See [requirements.txt](requirements.txt) for complete list.
 
 ## 🎓 Educational Focus
 
-CueStats is designed with **Universal Design for Learning (UDL)** principles:
+CueStat is designed with **Universal Design for Learning (UDL)** principles:
 - **Multiple Representations**: Visual plots + text descriptions + tables
 - **Interactive Exploration**: Hands-on parameter manipulation
 - **Immediate Feedback**: Real-time calculation updates
