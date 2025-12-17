@@ -2867,21 +2867,24 @@ elif selected_tab == "Visualizations":
                 if plot_type == 'Histogram':
                     if not x_axis_col: raise ValueError("Please select a data column for the histogram.")
                     data = get_data_from_col_string(x_axis_col)
-                    fig = plot_histogram(data, bins=plot_options['bins'], title=f'Histogram of {x_axis_col.split(": ", 1)[1]}', xlabel=x_axis_col.split(": ", 1)[1], use_relative=plot_options.get('use_relative', False), force_integer_bins=plot_options.get('force_integer_bins', False))
+                    # Extract column name - handle both "key: value" format and plain column names
+                    col_label = x_axis_col.split(": ", 1)[1] if ": " in x_axis_col else x_axis_col
+                    fig = plot_histogram(data, bins=plot_options['bins'], title=f'Histogram of {col_label}', xlabel=col_label, use_relative=plot_options.get('use_relative', False), force_integer_bins=plot_options.get('force_integer_bins', False))
                 elif plot_type == 'Boxplot':
                     if not x_axis_col: raise ValueError("Please select at least one data column for the boxplot.")
                     if plot_options.get('multiple', False):
                         # Multiple boxplots
                         if isinstance(x_axis_col, list) and len(x_axis_col) > 0:
                             data_list = [get_data_from_col_string(col) for col in x_axis_col]
-                            labels = [col.split(": ", 1)[1] for col in x_axis_col]
+                            labels = [col.split(": ", 1)[1] if ": " in col else col for col in x_axis_col]
                             fig = plot_box_plot(data_list, title='Box Plots Comparison', ylabel='Value', horizontal=plot_options.get('horizontal', False), labels=labels)
                         else:
                             raise ValueError("Please select at least one data column for the boxplot.")
                     else:
                         # Single boxplot
                         data = get_data_from_col_string(x_axis_col)
-                        fig = plot_box_plot(data, title=f'Box Plot of {x_axis_col.split(": ", 1)[1]}', ylabel=x_axis_col.split(": ", 1)[1], horizontal=plot_options.get('horizontal', False))
+                        col_label = x_axis_col.split(": ", 1)[1] if ": " in x_axis_col else x_axis_col
+                        fig = plot_box_plot(data, title=f'Box Plot of {col_label}', ylabel=col_label, horizontal=plot_options.get('horizontal', False))
                 elif plot_type == 'Bar Plot':
                     if not x_axis_col: raise ValueError("Please select a data column for the bar plot.")
                     df_name, col_name = x_axis_col.split(': ', 1)
@@ -2893,7 +2896,8 @@ elif selected_tab == "Visualizations":
                 elif plot_type == 'Dot Plot':
                     if not x_axis_col: raise ValueError("Please select a data column for the dot plot.")
                     data = get_data_from_col_string(x_axis_col)
-                    fig = plot_dot_plot(data, title=f'Dot Plot of {x_axis_col.split(": ", 1)[1]}', xlabel=x_axis_col.split(": ", 1)[1])
+                    col_label = x_axis_col.split(": ", 1)[1] if ": " in x_axis_col else x_axis_col
+                    fig = plot_dot_plot(data, title=f'Dot Plot of {col_label}', xlabel=col_label)
                 elif plot_type == 'Scatter Plot':
                     if not x_axis_col or not y_axis_col: raise ValueError("Please select both X and Y axis variables.")
                     df_name_x, col_name_x = x_axis_col.split(': ', 1)
