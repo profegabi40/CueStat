@@ -1073,8 +1073,68 @@ def safe_rerun():
 if selected_tab == "Data Input":
     st.header("Data Input")
 
-    st.subheader("Upload Data File")
-    uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
+    # Create tabs for different input methods
+    input_method = st.radio(
+        "Choose Data Input Method:",
+        options=["Upload File", "Google Sheets", "Manual Entry"],
+        horizontal=True,
+        key="data_input_method"
+    )
+
+    if input_method == "Upload File":
+        st.subheader("Upload Data File")
+        uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
+    elif input_method == "Google Sheets":
+        st.subheader("Import from Google Sheets")
+        st.markdown("""
+        **Instructions:**
+        1. Open your Google Sheet
+        2. Click **File → Share → Publish to web**
+        3. Choose **Entire Document** or specific sheet
+        4. Select **Comma-separated values (.csv)** format
+        5. Click **Publish** and copy the link
+        6. Paste the link below
+        """)
+        
+        sheets_url = st.text_input(
+            "Google Sheets URL (Published as CSV)",
+            placeholder="https://docs.google.com/spreadsheets/d/e/...",
+            help="Make sure your sheet is published to the web as CSV"
+        )
+        
+        if st.button("Load from Google Sheets", key="load_sheets_btn"):
+            if sheets_url:
+                try:
+                    # Read CSV directly from the published URL
+                    df = pd.read_csv(sheets_url)
+                    
+                    if df is not None and not df.empty:
+                        # Reset index to start at 1 instead of 0
+                        df.index = range(1, len(df) + 1)
+                        df.index.name = None
+                        # Replace any existing dataframe with the new one
+                        st.session_state.global_dataframes = {'active_data': df}
+                        st.success(f"Successfully loaded data from Google Sheets! ({len(df)} rows, {len(df.columns)} columns)")
+                        st.write("Loaded data:")
+                        show_table(df)
+                        
+                        # Reset manual entry if Google Sheets is loaded
+                        st.session_state.manual_entry_df = pd.DataFrame({'Column A': ['']})
+                    else:
+                        st.error("The Google Sheet appears to be empty.")
+                except Exception as e:
+                    st.error(f"Error loading Google Sheets: {e}")
+                    st.info("💡 Make sure you've published the sheet to the web as CSV, not as a web page.")
+            else:
+                st.warning("Please enter a Google Sheets URL.")
+        uploaded_file = None  # Set to None so file upload logic doesn't run
+    else:  # Manual Entry
+        uploaded_file = None  # Set to None so file upload logic doesn't run
+
+    if input_method == "Upload File":
+        uploaded_file_original = uploaded_file  # Store for later reference
+    else:
+        uploaded_file = None
 
     if uploaded_file is not None:
         try:
@@ -1151,135 +1211,136 @@ if selected_tab == "Data Input":
         except Exception as e:
             st.error(f"Error processing file: {e}")
 
-    st.subheader("Manual Data Entry")
+    if input_method == "Manual Entry":
+        st.subheader("Manual Data Entry")
+        
+        # Initialize with one row if empty
+        if 'table_data' not in st.session_state:
+            st.session_state.table_data = pd.DataFrame({'Column 1': ['']})
+        
+        # Check if clear action was triggered
+        if st.session_state.get('clear_all_triggered', False):
+            st.session_state.table_data = pd.DataFrame({'Column 1': ['']})
+            st.session_state.clear_all_triggered = False
+        
+        # This is our working copy that persists across reruns
+        table_data = st.session_state.table_data
     
-    # Initialize with one row if empty
-    if 'table_data' not in st.session_state:
-        st.session_state.table_data = pd.DataFrame({'Column 1': ['']})
-    
-    # Check if clear action was triggered
-    if st.session_state.get('clear_all_triggered', False):
-        st.session_state.table_data = pd.DataFrame({'Column 1': ['']})
-        st.session_state.clear_all_triggered = False
-    
-    # This is our working copy that persists across reruns
-    table_data = st.session_state.table_data
-    
-    # Editable column headers
-    st.markdown("**Click column name to edit:**")
-    header_cols = st.columns(len(table_data.columns))
-    new_header_names = []
-    for i, col in enumerate(table_data.columns):
-        with header_cols[i]:
-            if f'editing_col_{i}' not in st.session_state:
-                st.session_state[f'editing_col_{i}'] = False
-            
-            if st.session_state[f'editing_col_{i}']:
-                new_name = st.text_input(f"Edit Column {i+1} Name", value=col, key=f"header_input_{i}", label_visibility="collapsed")
-                if st.button("✓", key=f"save_header_{i}"):
+        # Editable column headers
+        st.markdown("**Click column name to edit:**")
+        header_cols = st.columns(len(table_data.columns))
+        new_header_names = []
+        for i, col in enumerate(table_data.columns):
+            with header_cols[i]:
+                if f'editing_col_{i}' not in st.session_state:
                     st.session_state[f'editing_col_{i}'] = False
-                    if new_name.strip() and new_name.strip() not in [c for j, c in enumerate(table_data.columns) if j != i]:
-                        new_header_names.append(new_name.strip())
+            
+                if st.session_state[f'editing_col_{i}']:
+                    new_name = st.text_input(f"Edit Column {i+1} Name", value=col, key=f"header_input_{i}", label_visibility="collapsed")
+                    if st.button("✓", key=f"save_header_{i}"):
+                        st.session_state[f'editing_col_{i}'] = False
+                        if new_name.strip() and new_name.strip() not in [c for j, c in enumerate(table_data.columns) if j != i]:
+                            new_header_names.append(new_name.strip())
+                        else:
+                            new_header_names.append(col)
+                            if not new_name.strip():
+                                st.warning("Column name cannot be empty.")
+                            else:
+                                st.warning("Column name must be unique.")
                     else:
                         new_header_names.append(col)
-                        if not new_name.strip():
-                            st.warning("Column name cannot be empty.")
-                        else:
-                            st.warning("Column name must be unique.")
                 else:
+                    if st.button(col, key=f"edit_header_{i}"):
+                        st.session_state[f'editing_col_{i}'] = True
                     new_header_names.append(col)
-            else:
-                if st.button(col, key=f"edit_header_{i}"):
-                    st.session_state[f'editing_col_{i}'] = True
-                new_header_names.append(col)
     
-    # Apply renamed headers if changed
-    if new_header_names != list(table_data.columns) and len(new_header_names) == len(table_data.columns):
-        rename_map = {old: new for old, new in zip(table_data.columns, new_header_names) if new != old}
-        if rename_map:
-            table_data = table_data.rename(columns=rename_map)
-            st.session_state.table_data = table_data
-            safe_rerun()
+        # Apply renamed headers if changed
+        if new_header_names != list(table_data.columns) and len(new_header_names) == len(table_data.columns):
+            rename_map = {old: new for old, new in zip(table_data.columns, new_header_names) if new != old}
+            if rename_map:
+                table_data = table_data.rename(columns=rename_map)
+                st.session_state.table_data = table_data
+                safe_rerun()
     
-    # Data editor with automatic new row on Enter
-    st.markdown("**Enter data below:**")
-    st.markdown("""
-    <div role="region" aria-label="Manual Data Entry Grid">
-    <p id="data-editor-help">💡 Tip: Type in the table and use Tab to navigate between cells. 
-    Click the '+' icon at the bottom of the table to add rows. Use the trash icon to delete rows.</p>
-    </div>
-    """, unsafe_allow_html=True)
+        # Data editor with automatic new row on Enter
+        st.markdown("**Enter data below:**")
+        st.markdown("""
+        <div role="region" aria-label="Manual Data Entry Grid">
+        <p id="data-editor-help">💡 Tip: Type in the table and use Tab to navigate between cells. 
+        Click the '+' icon at the bottom of the table to add rows. Use the trash icon to delete rows.</p>
+        </div>
+        """, unsafe_allow_html=True)
     
-    # Use data editor with dynamic rows - this allows adding/removing rows
-    # Reset index to avoid warnings with hide_index
-    # Create a copy with 1-based index for display
-    display_df = table_data.copy()
-    display_df.index = range(1, len(display_df) + 1)
+        # Use data editor with dynamic rows - this allows adding/removing rows
+        # Reset index to avoid warnings with hide_index
+        # Create a copy with 1-based index for display
+        display_df = table_data.copy()
+        display_df.index = range(1, len(display_df) + 1)
     
-    edited_df = st.data_editor(
-        display_df,
-        num_rows="dynamic",
-        width="stretch",
-        key="data_editor",
-        hide_index=True,  # Hide index to avoid "None" issue when adding rows
-    )
+        edited_df = st.data_editor(
+            display_df,
+            num_rows="dynamic",
+            width="stretch",
+            key="data_editor",
+            hide_index=True,  # Hide index to avoid "None" issue when adding rows
+        )
     
-    # Keep 1-based index for consistency with uploaded data
-    if edited_df is not None and len(edited_df) > 0:
-        edited_df.index = range(1, len(edited_df) + 1)
-        edited_df.index.name = None  # Set to None to avoid showing "None" header
+        # Keep 1-based index for consistency with uploaded data
+        if edited_df is not None and len(edited_df) > 0:
+            edited_df.index = range(1, len(edited_df) + 1)
+            edited_df.index.name = None  # Set to None to avoid showing "None" header
 
-    # DO NOT update session state here - it causes reruns that erase data
-    # The data_editor widget manages its own state via the key
-    # We'll only sync to session state when needed (buttons) or when processing
+        # DO NOT update session state here - it causes reruns that erase data
+        # The data_editor widget manages its own state via the key
+        # We'll only sync to session state when needed (buttons) or when processing
     
-    # Action buttons
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("Add Column", key="add_col_btn"):
-            new_col_num = len(edited_df.columns) + 1
-            new_col_name = f"Column {new_col_num}"
-            while new_col_name in edited_df.columns:
-                new_col_num += 1
+        # Action buttons
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.button("Add Column", key="add_col_btn"):
+                new_col_num = len(edited_df.columns) + 1
                 new_col_name = f"Column {new_col_num}"
-            edited_df[new_col_name] = ""
-            # Update our persistent table_data
-            st.session_state.table_data = edited_df
-            st.rerun()
+                while new_col_name in edited_df.columns:
+                    new_col_num += 1
+                    new_col_name = f"Column {new_col_num}"
+                edited_df[new_col_name] = ""
+                # Update our persistent table_data
+                st.session_state.table_data = edited_df
+                st.rerun()
     
-    with col2:
-        if st.button("Clear All", key="clear_all_btn_unique"):
-            # Set flag to clear on next render
-            st.session_state.clear_all_triggered = True
-            st.rerun()
+        with col2:
+            if st.button("Clear All", key="clear_all_btn_unique"):
+                # Set flag to clear on next render
+                st.session_state.clear_all_triggered = True
+                st.rerun()
 
     
-    # Process button
-    if st.button("Process Manual Entry Data"):
-        # Get the current data from the editor (stored by its key in session state)
-        # The data_editor stores its state under the key we provided
-        table_data = edited_df if edited_df is not None else pd.DataFrame()
+        # Process button
+        if st.button("Process Manual Entry Data"):
+            # Get the current data from the editor (stored by its key in session state)
+            # The data_editor stores its state under the key we provided
+            table_data = edited_df if edited_df is not None else pd.DataFrame()
         
-        if not table_data.empty:
-            # Remove completely empty rows
-            cleaned_data = table_data.dropna(how='all')
-            if not cleaned_data.empty:
-                try:
-                    processed_manual_df = process_manual_entry_data(cleaned_data)
-                    # Keep 1-based index for consistency with uploaded data
-                    processed_manual_df.index = range(1, len(processed_manual_df) + 1)
-                    processed_manual_df.index.name = None  # Set to None to avoid showing "None" header
-                    # Replace any existing dataframe with the manual entry data
-                    st.session_state.global_dataframes = {'active_data': processed_manual_df}
-                    st.success("Manual entry data processed and stored. This replaces any previously loaded data.")
-                    st.write("Processed Manual Entry Data:")
-                    show_table(processed_manual_df)
-                except Exception as e:
-                    st.error(f"Error processing manual entry data: {e}")
+            if not table_data.empty:
+                # Remove completely empty rows
+                cleaned_data = table_data.dropna(how='all')
+                if not cleaned_data.empty:
+                    try:
+                        processed_manual_df = process_manual_entry_data(cleaned_data)
+                        # Keep 1-based index for consistency with uploaded data
+                        processed_manual_df.index = range(1, len(processed_manual_df) + 1)
+                        processed_manual_df.index.name = None  # Set to None to avoid showing "None" header
+                        # Replace any existing dataframe with the manual entry data
+                        st.session_state.global_dataframes = {'active_data': processed_manual_df}
+                        st.success("Manual entry data processed and stored. This replaces any previously loaded data.")
+                        st.write("Processed Manual Entry Data:")
+                        show_table(processed_manual_df)
+                    except Exception as e:
+                        st.error(f"Error processing manual entry data: {e}")
+                else:
+                    st.warning("Manual entry table is empty. Please add some data.")
             else:
                 st.warning("Manual entry table is empty. Please add some data.")
-        else:
-            st.warning("Manual entry table is empty. Please add some data.")
 
     # Display currently loaded dataframe
     st.subheader("Current Data:")
