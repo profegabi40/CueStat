@@ -1429,14 +1429,14 @@ def plot_normal_distribution(mean, std_dev, x_min_factor=-4, x_max_factor=4, num
     ax.plot(x_values, pdf_values, color='#0173B2', linewidth=2, label='PDF')
     
     # Add shading based on calculation type
-    if calc_type == 'cdf' and shade_x is not None:
-        shade_mask = x_values <= shade_x
+    if calc_type in ['cdf', 'cdf_strict'] and shade_x is not None:
+        shade_mask = x_values <= shade_x if calc_type == 'cdf' else x_values < shade_x
         # Accessible blue with hatching pattern for non-color indicators
         ax.fill_between(x_values[shade_mask], pdf_values[shade_mask], alpha=0.5, color='#0173B2', hatch='///', edgecolor='#0173B2', label=f'P(X < {shade_x})')
         # Accessible orange for contrast
         ax.axvline(shade_x, color='#DE8F05', linestyle='--', linewidth=2, label=f'x = {shade_x}')
-    elif calc_type == 'survival' and shade_x is not None:
-        shade_mask = x_values >= shade_x
+    elif calc_type in ['survival', 'survival_strict'] and shade_x is not None:
+        shade_mask = x_values >= shade_x if calc_type == 'survival' else x_values > shade_x
         ax.fill_between(x_values[shade_mask], pdf_values[shade_mask], alpha=0.5, color='#0173B2', hatch='///', edgecolor='#0173B2', label=f'P(X > {shade_x})')
         ax.axvline(shade_x, color='#DE8F05', linestyle='--', linewidth=2, label=f'x = {shade_x}')
     elif calc_type == 'interval' and shade_a is not None and shade_b is not None:
