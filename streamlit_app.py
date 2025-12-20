@@ -3332,8 +3332,8 @@ elif selected_tab == "Hypothesis Testing":
             
         else:  # Summary Statistics
             st.write("**Contingency Table**")
-            num_rows = st.number_input('Number of Rows:', value=get_state_value('ht_chi2_ind_num_rows', 2), min_value=2, max_value=10, step=1, key="ht_chi2_ind_num_rows")
-            num_cols = st.number_input('Number of Columns:', value=get_state_value('ht_chi2_ind_num_cols', 2), min_value=2, max_value=10, step=1, key="ht_chi2_ind_num_cols")
+            num_rows = st.number_input('Number of Rows:', value=int(get_state_value('ht_chi2_ind_num_rows', 2)), min_value=2, max_value=10, step=1, key="ht_chi2_ind_num_rows", format="%d")
+            num_cols = st.number_input('Number of Columns:', value=int(get_state_value('ht_chi2_ind_num_cols', 2)), min_value=2, max_value=10, step=1, key="ht_chi2_ind_num_cols", format="%d")
             params['chi2_ind_input_type'] = 'summary'
             
             # Input category names for rows
